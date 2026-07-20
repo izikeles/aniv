@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Dozen Memories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --text-dark: #3a2a18;
+            --text-light: #fdfbf7;
+            --panel-bg: rgba(244, 234, 224, 0.65);
+            --panel-border: rgba(255, 255, 255, 0.4);
+            --panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            --highlight: #b06a5b;
+            
+            /* Authentic Egg Carton Pulp Colors */
+            --pulp-light: #f0ebe1;
+            --pulp-base: #dcd3c6;
+            --pulp-dark: #bbaea0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0; min-height: 100%;
+            font-family: 'Playfair Display', serif;
+            color: var(--text-dark);
+            background-color: #8c6a4a; 
+            background-image: url('table.jpeg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            box-shadow: inset 0 0 200px rgba(0,0,0,0.5); 
+        }
+
+        /* Wrap everything for fixed desktop view but allow scrolling if items overflow */
+        .app-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 120px; /* Safe space for bottom elements */
+        }
+
+        /* ----- Title Section ----- */
+        .header {
+            text-align: center; 
+            padding-top: 35px;
+            color: var(--text-light);
+            text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        .header h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); margin: 0; font-weight: 600; }
+        .header p { font-size: clamp(1rem, 2vw, 1.3rem); margin-top: 8px; font-style: italic; opacity: 0.9; }
+
+        /* ----- UI Panels (Glassmorphism) ----- */
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--panel-shadow);
+            padding: 20px;
+            z-index: 4;
+        }
+
+        /* Music Player */
+        .music-player {
+            position: absolute; top: 35px; right: 40px; 
+            display: flex; align-items: center; gap: 15px; 
+            width: 260px; padding: 15px 20px;
+        }
+        .music-player .album-art {
+            width: 55px; height: 55px; border-radius: 8px;
+            background: linear-gradient(135deg, #4a4a4a, #2a2a2a);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); position: relative; overflow: hidden;
+        }
+        .music-player .album-art::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+            background: linear-gradient(to top, #7d5a50, transparent);
+        }
+        .music-title { font-weight: 600; font-size: 1rem; }
+        .music-artist { font-size: 0.85rem; color: #5c4c3c; margin-bottom: 5px; }
+        .controls { display: flex; gap: 12px; align-items: center; }
+        .controls button {
+            background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-dark); padding: 0; transition: transform 0.2s;
+        }
+        .controls button:hover { transform: scale(1.2); color: var(--highlight); }
+
+        /* Left Note (Paper Effect) */
+        .left-note {
+            position: absolute; top: 280px; left: 50px; 
+            width: 220px; background: #fdfbf7;
+            border-radius: 4px; border: none;
+            box-shadow: 2px 8px 20px rgba(0,0,0,0.2), inset 0 0 40px rgba(200,180,150,0.1);
+            transform: rotate(-3deg); padding: 30px 20px;
+        }
+        .left-note::before {
+            content: ''; position: absolute; top: -10px; left: 50%;
+            transform: translateX(-50%) rotate(2deg);
+            width: 60px; height: 25px; background: rgba(255,255,255,0.4);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); backdrop-filter: blur(2px);
+        }
+        .left-note h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; text-align: center; margin: 0 0 15px 0; }
+        .left-note p { font-family: 'Caveat', cursive; font-size: 1.6rem; line-height: 1.3; text-align: center; margin: 0 0 15px 0; }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: absolute; top: 250px; right: 40px; 
+            display: flex; flex-direction: column; gap: 25px;
+            border-radius: 25px; padding: 35px 20px;
+        }
+        .sidebar-item { display: flex; flex-direction: column; align-items: center; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; opacity: 0.8; }
+        .sidebar-item span { font-size: 1.5rem; margin-bottom: 5px; }
+        .sidebar-item:hover { transform: translateX(-5px) scale(1.05); opacity: 1; color: var(--highlight); }
+
+        /* ----- Photo Collage (Optimized Clean Architecture) ----- */
+        .photo-collage {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        }
+        .photo-polaroid {
+            position: absolute;
+            width: var(--w, 130px);
+            top: var(--t, auto);
+            bottom: var(--b, auto);
+            left: var(--l, auto);
+            right: var(--r, auto);
+            transform: rotate(var(--rot, 0deg));
+            aspect-ratio: 3 / 4;
+            background: transparent;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .photo-polaroid img {
+            width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 8px;
+            filter: sepia(0.28) contrast(0.96) saturate(0.88) brightness(0.98);
+        }
+        .photo-polaroid::before {
+            content: ''; position: absolute; inset: 0; border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255,244,230,0.06), rgba(0,0,0,0.04));
+            pointer-events: none; mix-blend-mode: multiply;
+        }
+        .photo-polaroid::after {
+            content: ''; position: absolute; inset: 0; border-radius: 12px;
+            background-image: linear-gradient(0deg, rgba(255,240,210,0.02), transparent);
+            opacity: 0.6; pointer-events: none; mix-blend-mode: overlay;
+        }
+        .photo-polaroid:hover {
+            transform: scale(1.06) translateY(-6px) rotate(var(--rot, 0deg));
+            box-shadow: 0 24px 50px rgba(0,0,0,0.34); z-index: 10;
+        }
+
+        /* ----- Egg Carton ---- */
+        .carton-container {
+            position: relative;
+            margin: 60px auto 40px auto;
+            width: min(1000px, calc(100% - 60px));
+            z-index: 2;
+            filter: drop-shadow(0 25px 40px rgba(0,0,0,0.55));
+        }
+        .carton-body {
+            position: absolute; inset: 20px 0;
+            background: var(--pulp-base);
+            border-radius: 15px;
+            background-image: 
+                radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+            background-size: 6px 6px, 5px 5px;
+            background-position: 0 0, 2px 2px;
+            box-shadow: 
+                inset 0 15px 30px rgba(255,255,255,0.6),
+                inset 0 -15px 30px rgba(0,0,0,0.15);
+        }
+        .egg-grid {
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px;
+            padding: 30px 20px; position: relative;
+        }
+
+        .egg-cup {
+            position: relative; display: flex; justify-content: center; align-items: center; padding: 5px 0;
+        }
+        .egg-cup:hover { z-index: 50 !important; }
+        .egg-grid .egg-cup:nth-child(-n+6) { z-index: 1; }
+        .egg-grid .egg-cup:nth-child(n+7) { z-index: 5; }
+
+        .cup-back-lip {
+            position: absolute; top: -20px; left: -10px; right: -10px; height: 35px;
+            background: var(--pulp-base);
+            mask-image: radial-gradient(ellipse at 50% 120%, black 60%, transparent 61%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 120%, black 60%, transparent 61%);
+            z-index: 0; 
+        }
+        .cup-front-lip {
+            position: absolute; bottom: -5px; left: -10px; right: -10px; height: 60px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), var(--pulp-base) 40%, var(--pulp-dark));
+            mask-image: radial-gradient(ellipse at 50% -20%, transparent 60%, black 61%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% -20%, transparent 60%, black 61%);
+            z-index: 5; pointer-events: none;
+        }
+        .cup-bottom-foot {
+            position: absolute; bottom: -35px; left: 0px; right: 0px; height: 40px;
+            background: var(--pulp-dark);
+            mask-image: radial-gradient(ellipse at 50% top, black 60%, transparent 61%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% top, black 60%, transparent 61%);
+            z-index: 0;
+        }
+        .carton-cones {
+            position: absolute; top: 50%; left: 20px; right: 20px; transform: translateY(-50%);
+            display: flex; justify-content: space-evenly; padding: 0 8.3%; pointer-events: none; z-index: 3;
+        }
+        .cone {
+            width: 20px; height: 80px;
+            background: linear-gradient(to bottom, var(--pulp-light), var(--pulp-base) 45%, var(--pulp-dark));
+            clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); border-radius: 4px;
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* ----- Eggs ----- */
+        .egg {
+            width: 90%; aspect-ratio: 0.72;
+            background: radial-gradient(circle at 35% 30%, #fff0dc 0%, #dfa675 40%, #a46736 90%, #6e401e 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: inset -15px -20px 30px rgba(0,0,0,0.5), inset 10px 10px 20px rgba(255,255,255,0.4), 0 25px 25px rgba(0,0,0,0.35);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
+            font-family: 'Caveat', cursive; font-size: 1.8rem; color: #4a2a15; position: relative; z-index: 2;
+        }
+        .egg::after {
+            content: ''; position: absolute; top: 12%; left: 20%; width: 35%; height: 25%;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%; transform: rotate(-30deg); pointer-events: none;
+        }
+        .egg span { font-size: 1.1rem; color: var(--highlight); margin-top: 5px; }
+        .egg.darker { background: radial-gradient(circle at 35% 30%, #eec49e 0%, #c4824d 40%, #8a5024 90%, #522d12 100%); }
+        .egg.lighter { background: radial-gradient(circle at 35% 30%, #fff7eb 0%, #ecc8a5 40%, #c89366 90%, #8c5a36 100%); }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg) translateY(-5px); }
+            25% { transform: rotate(5deg) translateY(-5px); }
+            50% { transform: rotate(-5deg) translateY(-5px); }
+            75% { transform: rotate(3deg) translateY(-5px); }
+        }
+        .egg:hover { animation: wiggle 0.5s ease-in-out infinite; filter: brightness(1.05); }
+
+        /* ----- Bottom Layout Section ----- */
+        .bottom-shelf {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 40px; z-index: 10; pointer-events: none;
+        }
+        .bottom-shelf .panel, .bottom-shelf .bottom-quote { pointer-events: auto; }
+
+        .hover-hint { font-size: 0.95rem; padding: 12px 20px; line-height: 1.4; }
+        .days-counter { text-align: center; padding: 12px 25px; font-size: 0.95rem; }
+        .days-counter strong { display: block; margin-top: 3px; font-size: 1.1rem; color: var(--highlight); }
+        
+        .bottom-quote {
+            background: rgba(40, 25, 15, 0.75); color: var(--text-light);
+            padding: 12px 35px; border-radius: 30px; font-style: italic;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 1.1rem;
+        }
+
+        /* ----- Pop-up Modals ----- */
+        #modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            z-index: 99; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #memory-modal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -40%) scale(0.9);
+            background: #fdfbf7; padding: 40px; border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5); z-index: 100; text-align: center;
+            max-width: 450px; width: 90%; opacity: 0; 
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-image: radial-gradient(#dcd3c6 1px, transparent 1px); background-size: 20px 20px;
+        }
+        #modal-overlay.show, #memory-modal.show { display: block; opacity: 1; }
+        #memory-modal.show { transform: translate(-50%, -50%) scale(1); }
+        #memory-modal h2 { font-family: 'Caveat', cursive; font-size: 3.5rem; margin: 0 0 10px 0; color: var(--highlight); }
+        #memory-modal p { font-size: 1.15rem; line-height: 1.6; color: #5c4c3c; margin-bottom: 25px; }
+        #memory-modal button {
+            padding: 12px 30px; background: var(--text-dark); color: #fff; border: none; border-radius: 25px;
+            font-family: 'Playfair Display', serif; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+        }
+        #memory-modal button:hover { background: var(--highlight); transform: scale(1.05); }
+
+        /* ----- New Vintage Letter Popup Modal ----- */
+        #letter-modal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -45%) scale(0.9);
+            z-index: 100; max-width: 580px; width: 90%; opacity: 0;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        #letter-modal.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        
+        .vintage-paper {
+            background-color: #f6eedb;
+            /* Authentic organic parchment look using double shading radial spots */
+            background-image: 
+                radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 60%),
+                radial-gradient(ellipse at center, transparent 40%, rgba(139, 101, 68, 0.15) 100%);
+            padding: 55px 45px 40px 45px;
+            border-radius: 4px;
+            border: 1px solid #e2d2b3;
+            /* Outer layered heavy paper shadows mixed with deep dark burned inner shadows */
+            box-shadow: 
+                0 4px 10px rgba(0,0,0,0.15),
+                0 25px 55px rgba(0,0,0,0.45),
+                inset 0 0 50px rgba(100, 70, 45, 0.25),
+                inset 0 0 15px rgba(74, 42, 21, 0.15);
+            position: relative;
+            max-height: 78vh;
+            overflow-y: auto;
+        }
+
+        /* Wax Seal Stamp Decoration */
+        .wax-seal {
+            position: absolute; top: 25px; right: 35px;
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, #a64b39, #7a2d1e);
+            border-radius: 52% 48% 55% 45% / 48% 52% 45% 55%; /* Intentionally irregular stamp circle shape */
+            display: flex; align-items: center; justify-content: center;
+            color: #f6eedb; font-size: 1.6rem;
+            box-shadow: 
+                inset 2px 2px 4px rgba(255,255,255,0.3),
+                inset -3px -3px 5px rgba(0,0,0,0.5),
+                2px 5px 10px rgba(0,0,0,0.35);
+            transform: rotate(-8deg);
+            text-shadow: 1px 2px 2px rgba(0,0,0,0.4);
+            user-select: none;
+        }
+        
+        .vintage-paper h2 {
+            font-family: 'Caveat', cursive; font-size: 2.6rem;
+            margin: 0 0 20px 0; color: #40301d; text-align: left;
+            border-bottom: 1px dashed rgba(139, 101, 68, 0.25);
+            padding-bottom: 8px;
+        }
+        .letter-content {
+            font-family: 'Caveat', cursive; font-size: 1.65rem;
+            line-height: 1.6; color: #382918; text-align: left;
+        }
+        .letter-content p { margin: 0 0 18px 0; }
+        
+        .vintage-paper button {
+            margin-top: 15px; padding: 10px 25px;
+            background: #4a3622; color: #f6eedb;
+            border: none; border-radius: 4px;
+            font-family: 'Playfair Display', serif; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .vintage-paper button:hover { background: var(--highlight); transform: translateY(-1px); }
+
+        /* Custom subtle scrollbar styling for the letter */
+        .vintage-paper::-webkit-scrollbar { width: 6px; }
+        .vintage-paper::-webkit-scrollbar-track { background: transparent; }
+        .vintage-paper::-webkit-scrollbar-thumb { background: rgba(139, 101, 68, 0.3); border-radius: 10px; }
+
+        /* ----- Responsive Strategies (Media Queries) ----- */
+        @media (max-width: 1024px) {
+            .photo-collage { display: none; } /* Hide heavy structural overlaps on smaller screens */
+            .left-note, .sidebar, .music-player { position: static; transform: none; margin: 20px auto; width: min(350px, 90%); }
+            .music-player { margin-top: 35px; }
+            .egg-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .carton-cones { display: none; }
+            .bottom-shelf { position: relative; flex-direction: column; gap: 15px; padding: 20px; }
+            body { overflow: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop autoplay>
+        <source src="Blessed.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="app-container">
+        <header class="header">
+            <h1>A Dozen Memories</h1>
+            <p>♥ 12 months, 12 memories, 1 unforgettable journey. ♥</p>
+        </header>
+
+        <!-- Music Player -->
+        <section class="panel music-player">
+            <div class="album-art"></div>
+            <div class="music-info">
+                <div class="music-title">Blessed</div>
+                <div class="music-artist">Daniel Caesar</div>
+                <div class="controls">
+                    <button aria-label="Previous track">&#9198;</button>
+                    <button id="play-btn" aria-label="Play/Pause" style="font-size: 1.3rem;">&#9654;</button> 
+                    <button aria-label="Next track">&#9197;</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Left Context Note -->
+        <article class="panel left-note">
+            <h2>Our Story</h2>
+            <p>Every month with you is another reason I'm the luckiest person alive.</p>
+            <div style="text-align: center; color: var(--highlight); font-size: 1.5rem;">♥</div>
+        </article>
+
+        <!-- Dynamic Visual Scattering System via Layout Inline Variables -->
+        <div class="photo-collage">
+            <div class="photo-polaroid" style="--t:60px; --l:25px; --rot:-18deg;"><img src="photobooth -1.jpg" alt="Memory 1"></div>
+            <div class="photo-polaroid" style="--t:110px; --l:240px; --rot:10deg; --w:135px;"><img src="photobooth -2.jpg" alt="Memory 2"></div>
+            <div class="photo-polaroid" style="--t:55px; --r:55px; --rot:-12deg;"><img src="photobooth -3.jpg" alt="Memory 3"></div>
+            <div class="photo-polaroid" style="--t:180px; --l:520px; --rot:6deg;"><img src="photobooth -4.jpg" alt="Memory 4"></div>
+            <div class="photo-polaroid" style="--t:45px; --r:310px; --rot:16deg; --w:145px;"><img src="photobooth -5.jpg" alt="Memory 5"></div>
+            <div class="photo-polaroid" style="--t:230px; --l:20px; --rot:-8deg;"><img src="photobooth -6.jpg" alt="Memory 6"></div>
+            <div class="photo-polaroid" style="--t:300px; --l:330px; --rot:4deg; --w:132px;"><img src="photobooth -7.jpg" alt="Memory 7"></div>
+            <div class="photo-polaroid" style="--t:350px; --r:20px; --rot:-18deg; --w:134px;"><img src="photobooth -8.jpg" alt="Memory 8"></div>
+            <div class="photo-polaroid" style="--t:430px; --l:130px; --rot:12deg; --w:132px;"><img src="photobooth -9.jpg" alt="Memory 9"></div>
+            <div class="photo-polaroid" style="--t:480px; --r:90px; --rot:10deg; --w:145px;"><img src="photobooth -10.jpg" alt="Memory 10"></div>
+            <div class="photo-polaroid" style="--b:180px; --l:35px; --rot:-10deg; --w:132px;"><img src="photobooth -11.jpg" alt="Memory 11"></div>
+            <div class="photo-polaroid" style="--b:140px; --r:170px; --rot:8deg; --w:135px;"><img src="photobooth -12.jpg" alt="Memory 12"></div>
+            <div class="photo-polaroid" style="--b:30px; --l:90px; --rot:-14deg; --w:132px;"><img src="photobooth -13.jpg" alt="Memory 13"></div>
+            <div class="photo-polaroid" style="--b:210px; --r:20px; --rot:14deg; --w:134px;"><img src="photobooth -14.jpg" alt="Memory 14"></div>
+            <div class="photo-polaroid" style="--b:90px; --l:260px; --rot:-12deg; --w:145px;"><img src="photobooth -15.jpg" alt="Memory 15"></div>
+            <div class="photo-polaroid" style="--b:90px; --r:310px; --rot:10deg; --w:132px;"><img src="photobooth -16.jpg" alt="Memory 16"></div>
+            <div class="photo-polaroid" style="--b:40px; --l:480px; --rot:-6deg; --w:145px;"><img src="photobooth -17.jpg" alt="Memory 17"></div>
+            <div class="photo-polaroid" style="--t:160px; --r:540px; --rot:8deg; --w:135px;"><img src="photobooth -18.jpg" alt="Memory 18"></div>
+            <div class="photo-polaroid" style="--b:150px; --l:620px; --rot:-14deg; --w:132px;"><img src="photobooth -19.jpg" alt="Memory 19"></div>
+            <div class="photo-polaroid" style="--t:420px; --r:420px; --rot:6deg;"><img src="photobooth -20.jpg" alt="Memory 20"></div>
+            <div class="photo-polaroid" style="--t:520px; --l:560px; --rot:-9deg; --w:135px;"><img src="photobooth -21.jpg" alt="Memory 21"></div>
+        </div>
+
+        <!-- MAIN EGG CARTON -->
+        <main class="carton-container">
+            <div class="carton-body"></div>
+
+            <div class="egg-grid">
+                <!-- ====== TOP ROW (Jan - Jun) ====== -->
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg" data-month="January">Jan <span>♥</span></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg darker" data-month="February">Feb <span>♥</span></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg lighter" data-month="March">Mar <span>♥</span></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg" data-month="April">Apr <span>♥</span></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg darker" data-month="May">May <span>♥</span></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="cup-back-lip"></div>
+                    <div class="egg lighter" data-month="June">Jun <span>♥</span></div>
+                </div>
+
+                <!-- ====== BOTTOM ROW (Jul - Dec) ====== -->
+                <div class="egg-cup">
+                    <div class="egg lighter" data-month="July">Jul <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="egg" data-month="August">Aug <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="egg darker" data-month="September">Sep <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="egg" data-month="October">Oct <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="egg darker" data-month="November">Nov <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+                <div class="egg-cup">
+                    <div class="egg lighter" data-month="December">Dec <span>♥</span></div>
+                    <div class="cup-front-lip"></div>
+                    <div class="cup-bottom-foot"></div>
+                </div>
+            </div>
+
+            <!-- Structural Cones -->
+            <div class="carton-cones">
+                <div class="cone"></div><div class="cone"></div><div class="cone"></div><div class="cone"></div><div class="cone"></div>
+            </div>
+        </main>
+
+        <!-- Sidebar Navigation Menu -->
+        <aside class="panel sidebar">
+            <div class="sidebar-item" id="letters-btn"><span>✉️</span> Letters</div>
+        </aside>
+
+        <!-- Fixed Interactive Bottom Shelf Wrapper -->
+        <footer class="bottom-shelf">
+            <div class="panel hover-hint">💡 Hover over an egg<br>to see it wiggle!</div>
+            <div class="bottom-quote">“ Thank you for being my today, tomorrows, and forever. ” ♥</div>
+            <div class="panel days-counter">Together for<strong>♥ 365+ days ♥</strong></div>
+        </footer>
+    </div>
+
+    <!-- Interactive Pop-up Modal Container -->
+    <div id="modal-overlay"></div>
+    
+    <div id="memory-modal" role="dialog" aria-labelledby="memory-title">
+        <h2 id="memory-title">Month</h2>
+        <p id="memory-text">Custom text loader option...</p>
+        <button id="close-modal-btn">Close Memory</button>
+    </div>
+
+    <!-- New Vintage Letter Pop-up Structure -->
+    <div id="letter-modal" role="dialog" aria-labelledby="letter-title">
+        <div class="vintage-paper">
+            <div class="wax-seal">♥</div>
+            <h2 id="letter-title">herrowowowow babiii,</h2>
+            <div class="letter-content">
+                <p>happy anniversaryyyyy!! never expected this, im ngl. from g10 aki, time acc flies when im with you. im always so grateful for the things that you do for me, from the smallest things to big things. i will always cherish every moment with you. im sosososososososososooso thankful that i get to heal my inner child with you, </p>
+                <p>experience the world with you, and be big backssss with you. ik i get insecure sometimes, pero im trying to be better for you. im always thanking god that he has sent someone like you in my life, a person who i can not only call my girlfriend, my bff, or soulmate, but also my finance, soon to be wife. i will always work hard to give you the life we wanted.</p>
+                <p> i love u so much. i love u more than anything. i love u in all of dr stranges realty. good thing i pulled you pigtail sa playground hahahaha, ifykyk. im really glad we took it for realzis. i love so much. i dint want to live another day without u. MWAHHHHHA, HAPPY ANNIVERSARY BABIII!!!</p>
+                <p style="margin-bottom: 5px; font-weight: 600;">Forever & always yours, ♥</p>
+            </div>
+            <button id="close-letter-btn">Close Letter</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Centralized Personalized Memories Database ---
+        const monthlyMemories = {
+            January: "ooooo we had our new year together thankyou for always sticking with me kahit most of the time im ykyk heehhee lough u.",
+            February: "Valentinessss???? OUR MONTH i mean every month is our month i know you never liked flowers pero minsan i buy you some kasi a lot of people got there gfs flowers i dont want u to go home empty handed ehehehe.",
+            March: "marchhhh random month pero u always randomly manage to make everything fine even in a dier situation.",
+            April: "hmmmm another random month but yk im gonna miss this cuz this were the tike we were always hanggning out.",
+            May: "bandang dulo na ng sy natin sa dlsau medjo scary kasi i dont know what is there for us pero as long na kasama kita sa future na yun im fine.",
+            June: "IM SO HAPPY AND PROUD OF YOU BABIIIII WE GRADUATEDD WHATTTTTTTTTT WITH HONORS PA ILL ALWAYS BE THE LOUDEST CHEER FOR YOU KAHIT TAHIMIK YUNG PLACE.",
+            July: "THIS WAS THE TIMESSSS WE FIRST HUG HAHAHA I MISS THOSE TIMES IM GONNA MISS HANGING OUT SA SPOT NATIN SA SCCHOOL WE WERE OG DUN I JS WISH WE DID IT SOONER.",
+            August: "siguro kung nag ka sakit ako na not cureable id spend all my last days with you.",
+            September: "ooo berrrrrr months time na malamig and miss ko cuddles mo.",
+            October: "octoberrrr araw ng patay sayo lang naman ako patay na patay never ako natakot sa ganon takot lang ako mawala ka.",
+            November: "OOOO ITS YO BDAY MONTH HAPPY LEGALLITYYY BABIIIII HEHEHE YAYYY.",
+            December: "ITS XMAS ONCE AGAIN YET IM STILL SUPER GREATFUL FOR THE BEST GIFT I COULD EVER RECIVE IN MY LIFETIME I LOVE YOU SO MUCH BABI."
+        };
+
+        // --- Audio Controls Logic ---
+        const music = document.getElementById("bg-music");
+        const playBtn = document.getElementById("play-btn");
+        let isPlaying = false;
+
+        function syncMusicState() {
+            playBtn.innerHTML = music.paused ? "&#9654;" : "&#10074;&#10074;";
+            isPlaying = !music.paused;
+        }
+
+        function toggleMusic() {
+            if (isPlaying) {
+                music.pause();
+            } else {
+                music.play().catch(err => console.log("Audio play blocked by browser policy. User gesture required."));
+            }
+            syncMusicState();
+        }
+
+        music.addEventListener("play", syncMusicState);
+        music.addEventListener("pause", syncMusicState);
+        music.addEventListener("ended", syncMusicState);
+
+        // Instant Autoplay Handlers
+        window.addEventListener("load", () => {
+            music.play().then(() => {
+                syncMusicState();
+            }).catch(() => {
+                // Instantly play on the very first touch/click interaction across the site if strict browser policy blocks it
+                const playOnFirstInteraction = () => {
+                    music.play().then(() => {
+                        syncMusicState();
+                        document.removeEventListener("click", playOnFirstInteraction);
+                        document.removeEventListener("touchstart", playOnFirstInteraction);
+                    }).catch(() => {});
+                };
+                document.addEventListener("click", playOnFirstInteraction);
+                document.addEventListener("touchstart", playOnFirstInteraction);
+            });
+            syncMusicState();
+        });
+
+        playBtn.addEventListener("click", toggleMusic);
+
+        // --- Memory Pop-up Modal Operations ---
+        const overlay = document.getElementById("modal-overlay");
+        const modal = document.getElementById("memory-modal");
+        const modalTitle = document.getElementById("memory-title");
+        const modalText = document.getElementById("memory-text");
+        const closeModalBtn = document.getElementById("close-modal-btn");
+
+        // --- Vintage Letter Elements ---
+        const letterBtn = document.getElementById("letters-btn");
+        const letterModal = document.getElementById("letter-modal");
+        const closeLetterBtn = document.getElementById("close-letter-btn");
+
+        function openMemory(monthName) {
+            modalTitle.innerText = monthName;
+            modalText.innerText = monthlyMemories[monthName] || "Relive the moments that made this month special.";
+            
+            overlay.style.display = "block";
+            modal.style.display = "block";
+            
+            setTimeout(() => {
+                overlay.classList.add("show");
+                modal.classList.add("show");
+            }, 10);
+        }
+
+        function openLetter() {
+            overlay.style.display = "block";
+            letterModal.style.display = "block";
+            
+            setTimeout(() => {
+                overlay.classList.add("show");
+                letterModal.classList.add("show");
+            }, 10);
+        }
+
+        function closeAllModals() {
+            overlay.classList.remove("show");
+            modal.classList.remove("show");
+            letterModal.classList.remove("show");
+            
+            setTimeout(() => {
+                overlay.style.display = "none";
+                modal.style.display = "none";
+                letterModal.style.display = "none";
+            }, 400); 
+        }
+
+        // --- Event Listeners System ---
+        document.querySelectorAll(".egg").forEach(eggElement => {
+            eggElement.addEventListener("click", () => {
+                const targetedMonth = eggElement.getAttribute("data-month");
+                openMemory(targetedMonth);
+            });
+        });
+
+        // Letter Interactions
+        letterBtn.addEventListener("click", openLetter);
+        closeLetterBtn.addEventListener("click", closeAllModals);
+
+        // Universal Overlay Closures
+        overlay.addEventListener("click", closeAllModals);
+        closeModalBtn.addEventListener("click", closeAllModals);
+    </script>
+</body>
+</html>
